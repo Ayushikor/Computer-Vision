@@ -1,4 +1,4 @@
-# install Library
+# Install required libraries first
 # pip install opencv-python
 # pip install cvzone
 # pip install numpy
@@ -9,16 +9,14 @@ import cvzone
 from cvzone.HandTrackingModule import HandDetector
 import numpy as np
 
-
-# Initialize the webcam
+# Initialize the webcam with HD resolution and 60 FPS
 cap = cv2.VideoCapture(0)
-cap.set(3, 1280)  # Width of webcam
-cap.set(4, 720)   # Height of webcam
-
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)  # HD Width
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)   # HD Height
+cap.set(cv2.CAP_PROP_FPS, 60)             # 60 FPS
 
 # Initialize hand detector
 detector = HandDetector(detectionCon=0.8, maxHands=1)
-
 
 # Variables for drawing
 brush_thickness = 15
@@ -27,11 +25,9 @@ draw_color = (255, 0, 0)  # Blue by default
 canvas = None
 xp, yp = 0, 0  # Previous points
 
-
 # Color palette (for changing colors)
 colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (0, 255, 255)]
 color_index = 0
-
 
 # Create a canvas for drawing
 while cap.isOpened():
@@ -40,31 +36,21 @@ while cap.isOpened():
     if not success:
         break
 
-
     # Flip the image to avoid mirror effect
     img = cv2.flip(img, 1)
-
 
     # Create the canvas if not initialized
     if canvas is None:
         canvas = np.zeros_like(img)
 
-
     # Detect hand and landmarks
     hands, img = detector.findHands(img, flipType=False)
 
     if hands:
-
         hand = hands[0]
         lmList = hand["lmList"]
-
-
         x1, y1 = lmList[8][:2]
-
-
-
         fingers = detector.fingersUp(hand)
-
 
         # If only the index finger is up - draw
         if fingers[1] == 1 and all(f == 0 for f in fingers[2:]):
@@ -80,19 +66,15 @@ while cap.isOpened():
                 cv2.line(canvas, (xp, yp), (x1, y1), draw_color, brush_thickness)
                 xp, yp = x1, y1
 
-
         # If all fingers are up - change color (reset position)
         if all(f == 1 for f in fingers):
             color_index = (color_index + 1) % len(colors)
             draw_color = colors[color_index]
             xp, yp = 0, 0  # Reset drawing start position
 
-
         # If no fingers are up - reset previous point (not drawing)
         if fingers[1] == 0:
             xp, yp = 0, 0
-
-
 
     # Combine the original image with the canvas
     img = cv2.addWeighted(img, 0.5, canvas, 0.5, 0)
